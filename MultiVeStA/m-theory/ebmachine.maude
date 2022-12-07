@@ -1,0 +1,125 @@
+***(
+  Event-B machines
+  authors: Carlos Olarte, Camilo Rocha
+  file: ebmachine.maude
+
+  Definition of an Event-B machine as a mapping from variables to terms in EBType
+  and encoding the state of the events of the machine
+***)
+
+load ebcontext .
+mod EBMACHINE is
+  inc EBCONTEXT  .
+
+  pr MAP{Qid, EBType} .
+  op Machine  : -> Cid . --- Class identifier for machines
+
+  op variables:_ : Map{Qid , EBType} -> Attribute [ctor format (n d d )] . *** Machine's variables 
+
+
+  --- The following operators must be instantiated by the implementation
+  --- of the machine
+
+  --- Sets, constants and variables
+  --- The configuration parameter is the context with the constant of the model
+  op init-variables : Object ->  Map{Qid , EBType} .
+
+  --- Building the initial state of the machine
+  op init-machine : Qid Qid -> Configuration .
+  vars QM QC : Qid .
+  ceq init-machine(QC, QM) 
+    = 
+        CTX:Object
+        < QM : Machine | variables: init-variables(CTX:Object) > 
+        < events : Events | state:  init-events >
+  if CTX:Object := init-context(QC)
+  .
+
+
+  --- Events
+  sort EvState . --- states of events
+  ops blocked unknown execute : -> EvState [ctor] .
+  op enable : NzNat -> EvState [ctor] . --- enable + weight 
+
+   --- Events and list of events
+   sort Event LEvent .
+   subsort Event < LEvent .
+   op noevent : -> LEvent . 
+   op ev : Qid EvState -> Event  [ctor] .
+   op __ : LEvent LEvent -> LEvent [ctor assoc id: noevent] .
+
+   op Events : -> Cid .
+   op events : -> Oid .
+   op state:_ : LEvent -> Attribute [ctor format (n d d) ] .
+
+   op init-events : -> LEvent . --- To be extended with the system at hand (all of them in state unknown)
+
+
+	vars EvL EvL' : LEvent . 
+	vars N M : Nat .
+	var Q : Qid .
+  var myCounter : Nat .
+   --- Some operations on list of event's states
+	 --- Check if none of the events are in state unknown (or in execute)
+   op not-unknown : LEvent -> Bool .
+   eq not-unknown(EvL ev(Q, unknown)  EvL')   = false .
+   eq not-unknown(EvL ev(Q, execute)  EvL')   = false .
+   eq not-unknown(EvL) = true [owise] .
+
+   --- Check if one of the events is firable
+   op one-firable : LEvent -> Bool .
+   eq one-firable(EvL ev(Q, enable(N)) EvL') = true .
+   eq one-firable(EvL) = false [owise] .
+
+
+   --- A set of enabled events
+   op enabled-events : LEvent -> LEvent .
+   eq enabled-events(noevent) = noevent .
+   eq enabled-events(ev(Q, unknown) EvL)   = enabled-events(EvL) .
+   eq enabled-events(ev(Q, blocked) EvL)   = enabled-events(EvL) .
+   eq enabled-events(ev(Q, execute) EvL)   = enabled-events(EvL) .
+   eq enabled-events(ev(Q, enable(N)) EvL) = ev(Q, enable(N)) enabled-events(EvL) .
+
+
+   --- Accumulating the weights 
+   op accumulate : LEvent -> LEvent .
+   op accumulate : LEvent Nat -> LEvent .
+   eq accumulate(EvL) = accumulate(EvL, 0) .
+   eq accumulate(noevent, M) = noevent .
+   eq accumulate( ev(Q, enable(N)) EvL , M ) = 
+      ev(Q, enable(N + M)) accumulate( EvL , N + M ) .
+   
+   --- Maximum accumulated value
+   op max-value : LEvent -> Nat .
+   eq max-value(noevent) = 0 . --- This means deadlock! None of the events is enabled
+   eq max-value( EvL ev(Q, enable(M)) ) = M .
+
+   --- Choose probabilistically one of the enabled events (already accumulated the values)
+   op choose-event : LEvent Nat -> LEvent .
+   op choose-event : LEvent Nat Nat -> LEvent .
+   eq choose-event(EvL, myCounter) = choose-event(EvL, myCounter, max-value(EvL)) .
+   eq choose-event(EvL, myCounter, N) = ev( $filter(EvL, uniform(N,myCounter)) ,execute) .
+  
+  
+   op $filter : LEvent Nat -> [Qid] .
+   eq $filter( ev(Q, enable(N)) EvL, M ) =
+       if M < N then Q
+       else $filter(EvL, M) 
+       fi .
+
+
+   --- Changes -------------------------------------------------
+   --- op accumulate2 : LEvent -> Nat . 
+   --- eq accumulate2(noevent) = 0 .
+   --- eq accumulate2( ev(Q, enable(N)) EvL ) = N + accumulate2(EvL) .
+
+   --- op choose-event2 : LEvent Nat -> LEvent .
+   --- eq choose-event2(EvL, N) = ev( $filter2(EvL, uniform(N)) ,execute) .
+
+   --- op $filter2 : LEvent Nat -> [Qid] .
+   --- eq $filter2( ev(Q, enable(N)) EvL, M ) = if (M - N <= 0) then Q else $filter2(EvL, M - N) fi . 
+   --- --------------------------------------------------------- 
+   
+endm
+
+eof

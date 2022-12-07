@@ -1,0 +1,41 @@
+***(
+  Event-B contexts
+  authors: Carlos Olarte, Camilo Rocha
+  file: ebcontext.maude
+
+  Definition of an Event-B context as a mapping from deferred sets to EBSets
+  and constants to their values as terms in the sort EBType
+  ***)
+
+
+load ebprelude .
+mod EBCONTEXT is
+  inc CONFIGURATION .
+  pr EB-CORE  .
+  pr MAP{Qid, EBSet} .
+  pr MAP{Qid, EBType} .
+  subsort Qid < Oid .
+
+  op Context  : -> Cid .
+  
+  op sets:_      : Map{Qid , EBSet} -> Attribute [ctor format (n d d)] . *** Context's user-defined sets
+  op constants:_ : Map{Qid , EBType} -> Attribute [ctor format (n d d)] . *** Context's contants
+
+
+  --- The following operators must be instantiated by the implementation
+  --- of the machine
+
+  --- Sets, constants and variables
+  op init-sets : ->  Map{Qid , EBSet} .
+  op init-constants : ->  Map{Qid , EBType} .
+
+  --- Building a context
+  op init-context : Qid -> Object .
+  var Q : Qid .
+  eq init-context(Q)
+    = < Q : Context | sets: init-sets,
+                      constants: init-constants 
+      > .
+endm
+
+eof

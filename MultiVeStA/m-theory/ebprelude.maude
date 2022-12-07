@@ -1,0 +1,585 @@
+***(
+  Event-B primitives encoding in Maude
+  authors: Carlos Olarte, Camilo Rocha
+  file: ebprelude.maude
+
+  This file contains the definitions for the representation of basic Event-B
+  constructs such as elements, sets, and relations, and operations on them.
+
+***)
+
+load sampler .
+
+--- Elements for deferred sets
+fmod EBELT is
+    pr CONVERSION .
+
+    sort EBElt .
+    op elt : Int -> EBElt [ctor] .
+    op elt : Bool -> EBElt [ctor] .
+    op elt : String -> EBElt [ctor] .
+
+
+    op _<_ : EBElt EBElt -> Bool .
+    vars n n' : Int .
+    vars s s' : String .
+    vars b b' : Bool .
+
+    eq elt(n) < elt(n') = n < n' .
+    eq elt(s) < elt(s') = s < s' .
+    eq elt(b) < elt(b') = not(b) and b' . --- false < true
+
+    eq elt(s) < elt(b) = true .
+    eq elt(b) < elt(n) = true .
+    eq elt(s) < elt(n) = true .
+      
+ endfm
+
+ view EBElt< from STRICT-TOTAL-ORDER to EBELT is
+   sort Elt to EBElt .
+ endv
+
+
+--- Sets of EBElt
+fmod EBSET is
+    pr SORTABLE-LIST-AND-SET{EBElt<} * 
+      (sort Set{EBElt<} to EBSet , sort NeSet{EBElt<} to EBNeSet, sort List{EBElt<} to EBList )   .
+
+    pr LIST{String} .
+
+
+    op _.._ : Int Int -> EBSet . --- building finite subsets of Int
+    var n m : Int .
+    eq n .. m
+      = $gen-set(n,m, empty) .
+
+    op $gen-set : Int Int EBSet -> EBSet .
+    ceq $gen-set(n,m,S) = S
+      if n > m .
+    ceq $gen-set(n,m,S) 
+      = $gen-set(s n, m, (S, elt(n)))
+      if n <= m .
+
+
+  op gen-set : String Nat -> EBSet . --- building indexed (string) constants
+  op $gen-set : String Nat EBSet -> EBSet .
+
+ -----------------------------------
+  vars S S'          : EBSet .
+  vars s s'          : String .
+  var L              : List{String} .
+  var e              : EBElt .
+ -----------------------------------
+
+  eq gen-set(s, n)
+   = $gen-set(s, n, empty) .
+  eq $gen-set(s, 0, S)
+   = S .
+  eq $gen-set(s, (s n), S)
+   = $gen-set(s, n, (elt(s + string(s n, 10)), S)) .
+
+  op gen-set : List{String} -> EBSet . 
+  op $gen-set : List{String} EBSet  -> EBSet . 
+
+  eq gen-set(L) = $gen-set(L, empty) .
+  eq $gen-set(nil, S) = S .
+  eq $gen-set((s L), S) = $gen-set(L, (S, elt(s))).
+
+  op map : EBSet -> EBSet .
+  eq map(empty) = empty .
+  eq map( (e, S)) = e, map(S) .
+
+endfm
+
+
+view EBSet from TRIV to EBSET is
+  sort Elt to EBSet .
+endv
+
+
+--- ==============================================
+--- Event-B definitions for relations and functions .
+--- Note that Event-B relations in the encoding are 
+--- always pairs of type EBElt. 
+--- Definition of *total* functions are wrt to a given 
+--- set of EBElt
+--- ==============================================
+
+--- Pairs of EBElt
+fmod EBPAIR is
+  pr EBSET . 
+  sort EBPair .
+  op _|->_ : EBElt EBElt -> EBPair [ctor] .
+
+  vars  X Y : EBElt .
+  vars  X' Y' : EBElt .
+
+  --- First component
+  op first : EBPair -> EBElt .
+  eq first( X |-> Y )
+   = X .
+  --- Second component
+  op second : EBPair -> EBElt .
+  eq second( X |->  Y )
+   = Y .
+  --- inverse
+  op inv-pair : EBPair -> EBPair .
+  eq inv-pair( X |->  Y )
+   = Y  |->  X  .
+
+   op _<_ : EBPair EBPair -> Bool .
+   eq X |-> Y <  X' |-> Y' 
+     = if X == X' then Y < Y' else X < X' fi .
+
+endfm
+
+view EBPair from STRICT-TOTAL-ORDER  to EBPAIR is
+    sort Elt to EBPair  .
+endv
+
+
+--- Relations (subset of the Cartesina Product)
+fmod EBRELATION is
+  pr SORTABLE-LIST-AND-SET{EBPair} * 
+       (sort Set{EBPair} to EBRel , sort NeSet{EBPair} to EBNeRel, sort List{EBPair} to EBRelL) .
+
+  ---------------------------------------
+  vars e e'                  : EBElt .
+  vars a b                   : EBElt .
+  var p                      : EBPair .
+  vars R S T                 : EBRel .
+  vars A B                   : EBSet .
+  vars NeA NeB               : EBNeSet .
+  ---------------------------------------
+
+  --- Generating relation (Cartesing Product)
+  op make-rel  : EBSet EBSet -> EBRel .
+  op $make-rel : EBSet EBSet EBRel -> EBRel .
+  eq make-rel(A, B)
+   = $make-rel(A, B, (empty).EBRel) .
+  eq $make-rel(empty, B, R)
+   = R .
+  eq $make-rel(A, empty, R)
+   = R .
+  eq $make-rel(a, (b, B), R)
+   = $make-rel(a, B, ((a |-> b), R)) .
+  eq $make-rel((a, NeA), NeB, R)
+   = $make-rel(NeA, NeB, $make-rel(a, NeB, R)) .
+
+   --- Cardinality 
+   op card : EBSet -> Nat .
+   eq card( (empty).EBSet) = 0 .
+   eq card( (e, A) ) = 1 + card(A) .
+   op card : EBRel -> Nat .
+   eq card( (empty).EBRel) = 0 .
+   eq card( (p, R) ) = 1 + card(R) .
+
+  --- Domain
+  op dom  : EBRel -> EBSet .
+  op $dom : EBRel EBSet -> EBSet .
+  eq dom(R)
+   = $dom(R, (empty).EBSet) .
+  eq $dom(empty, A)
+   = A .
+  eq $dom((p,R), A)
+   = $dom(R, (first(p), A)) .
+
+  --- Range
+  op ran  : EBRel -> EBSet .
+  op $ran : EBRel EBSet -> EBSet .
+  eq ran(R)
+   = $ran(R, (empty).EBSet) .
+  eq $ran(empty, A)
+   = A .
+  eq $ran((p, R), A)
+   = $ran(R, (second(p), A)) .
+
+  --- Checking if R is total wrt a set
+  op is-total? : EBRel EBSet -> Bool .
+  eq is-total?(R, A)
+   = dom(R) == A .
+
+  --- Checking if R is surjective wrt a set
+  op is-surjective? : EBRel EBSet -> Bool .
+  eq is-surjective?(R, A)
+   = ran(R) == A .
+
+  --- Checking if R is total surjective wrt given sets
+  op is-total-surjective? : EBRel EBSet EBSet -> Bool .
+  eq is-total-surjective?(R, A, B)
+   = is-total?(R, A) and-then is-surjective?(R, B) .
+
+  --- Inverse of a relation
+  op inverse  : EBRel -> EBRel .
+  op $inverse : EBRel EBRel -> EBRel .
+  eq inverse(R)
+   = $inverse(R, (empty).EBRel) .
+  eq $inverse(empty, S)
+   = S .
+  eq $inverse((p, R), S)
+   = $inverse(R, (inv-pair(p), S)) .
+
+  --- Domain Restriction
+  op dom-res  : EBRel EBSet -> EBRel .
+  op $dom-res : EBRel EBSet EBRel -> EBRel .
+  eq dom-res(R, A)
+   = $dom-res(R, A, (empty).EBRel) .
+  eq $dom-res(empty, A, S)
+   = S .
+  eq $dom-res((p, R), A, S)
+   = $dom-res(R, A, ((if first(p) in A then p else empty fi), S)) .
+
+  --- Domain Restriction Complement
+  op dom-res~  : EBRel EBSet -> EBRel .
+  op $dom-res~ : EBRel EBSet EBRel -> EBRel .
+  eq dom-res~(R, A)
+   = $dom-res~(R, A, (empty).EBRel) .
+  eq $dom-res~(empty, A, S)
+   = S .
+  eq $dom-res~((p, R), A, S)
+   = $dom-res~(R, A, ((if not (first(p) in A) then p else empty fi), S)) .
+
+  --- Range Restriction
+  op ran-res  : EBRel EBSet -> EBRel .
+  op $ran-res : EBRel EBSet EBRel -> EBRel .
+  eq ran-res(R, A)
+   = $ran-res(R, A, (empty).EBRel) .
+  eq $ran-res(empty, A, S)
+   = S .
+  eq $ran-res((p, R), A, S)
+   = $ran-res(R, A, ((if second(p) in A then p else empty fi), S)) .
+
+  --- Range Restriction Complement
+  op ran-res~  : EBRel EBSet -> EBRel .
+  op $ran-res~ : EBRel EBSet EBRel -> EBRel .
+  eq ran-res~(R, A)
+   = $ran-res~(R, A, (empty).EBRel) .
+  eq $ran-res~(empty, A, S)
+   = S .
+  eq $ran-res~((p, R), A, S)
+   = $ran-res~(R, A, ((if not (second(p) in A) then p else empty fi), S)) .
+
+  --- Image of the relation
+  ***(
+  op image : EBRel EBSet -> EBSet .
+  eq image(empty, A) = empty .
+  eq image((p, R), A) = image(R, A) , if ( first(p) in A) then second(p) else empty  fi .
+  ***)
+  op _[_]   : EBRel EBSet -> EBSet .
+  op $image : EBRel EBSet EBSet -> EBSet .
+  eq R [ A ]
+   = $image(R, A, (empty).EBSet) .
+  eq $image(empty, A, B)
+   = B .
+  eq $image((p, R), A, B)
+   = $image(R, A, (if first(p) in A then second(p) else empty fi, B)) .
+
+  --- Forward composition
+  op _;_ : EBRel EBRel -> EBRel .
+  op $forward : EBRel EBRel EBRel -> EBRel .
+  eq R ; S
+   = $forward(R, S, (empty).EBRel) .
+  eq $forward(empty, S, T)
+   = T .
+  eq $forward((p, R), S, T)
+   = $forward(R, S, (make-rel(first(p), S [ second(p) ]), T)) .
+
+  --- Backward composition
+  op _;~_ : EBRel EBRel -> EBRel .
+  eq R ;~ T
+   = T ; R .
+
+  --- Overriding
+  op _<+_ : EBRel EBRel -> EBRel .
+  eq R <+ T
+   = dom-res~(R, dom(T)), T .
+  op overr : EBRel EBRel -> EBRel .
+  eq overr(R, T) = R <+ T .
+
+  --- Generating the identity relation
+  op id  : EBSet -> EBRel .
+  op $id : EBSet EBRel -> EBRel .
+  eq id(A)
+   = $id(A, (empty).EBRel) .
+  eq $id((empty).EBSet, R)
+   = R .
+  eq $id((e, A), R)
+   = $id(A, (e |-> e , R)) .
+
+  --- Checking Id (on an arbitrary set)
+  op is-id? : EBRel -> Bool .
+  eq is-id?(empty)
+   = true .
+  eq is-id?((p, R))
+   = (first(p) == second(p)) and-then is-id?(R) .
+
+  --- Partial functions
+  op is-partial-fun? : EBRel -> Bool .
+  eq is-partial-fun?(R)
+   = is-id?((inverse(R) ; R)) . 
+
+  --- Total functions
+  op is-total-fun? : EBRel EBSet -> Bool .
+  eq is-total-fun?(R, A)
+   = (dom(R) == A) and-then is-partial-fun?(R) .
+
+  --- Partial injections
+  op is-injection? : EBRel -> Bool .
+  eq is-injection?(R)
+   = is-partial-fun?(R) and-then is-partial-fun?(inverse(R)) .
+
+  --- Total injections (wrt to a given set)
+  op is-total-injection? : EBRel EBSet -> Bool .
+  eq is-total-injection?(R, A)
+   = is-total-fun?(R, A) and-then is-partial-fun?(inverse(R)) .
+
+  --- Partial Surjection (wrt to a given set)
+  op is-surjection? : EBRel EBSet -> Bool .
+  eq is-surjection?(R, B)
+   = (B == ran(R)) and-then is-partial-fun?(R) .
+
+  --- Total Surjection (wrt to 2 given sets)
+  op is-total-surjection? : EBRel EBSet EBSet -> Bool .
+  eq is-total-surjection?(R, A, B)
+   = (B == ran(R)) and-then is-total-fun?(R, A) .
+
+  --- Bijection (wrt to 2 given sets)
+  op is-bijection? : EBRel EBSet EBSet -> Bool .
+  eq is-bijection?(R, A, B)
+   = is-total-surjection?(R, A, B) and-then is-total-injection?(R, A) .
+endfm
+
+--- EB-TYPE represent values for Event-B expressions as possible singletons of
+--- EBElt or EBRel. 
+
+fmod EB-TYPE is
+  pr EBRELATION .
+  sort EBType .
+  op val : EBSet -> EBType .
+  op val : EBRel -> EBType .
+
+  ---------------------
+  vars n n' : Nat .
+  vars b b' : Bool .
+  vars s s' : String .
+  vars S S' : EBSet .
+  vars R R' : EBRel .
+  vars e e' : EBElt .
+  ---------------------
+   
+   --- from EBType to Nat, assuming EBType is a singleton containing a nat
+   op ebset2nat : EBType ~> Nat .
+   eq ebset2nat( val(elt(n))) = n .
+   --- from EBType to Bool, assuming EBType is a singleton containing a bool
+   op ebset2bool : EBType ~> Bool .
+   eq ebset2bool( val(elt(b))) = b .
+      --- from EBType to String
+   op ebset2str : EBType ~> String .
+   eq ebset2str( val(elt(s)))  = s .
+    --- From EBTypes to float (PveSTa expressions)
+    --- Defined only for booleans and nats
+    op toFloat : EBType -> Float .
+    eq toFloat(val(elt(n))) = float(n) .
+    eq toFloat(val(elt(b))) = if b then 1.0 else 0.0 fi .
+
+
+   --- =====================
+   --- =====================
+   --- Operations on EBType
+
+   --- Arithmetic 
+   op _+_ : EBType EBType -> EBType .
+   eq val(elt(n)) + val(elt(n')) = val(elt(n + n')) .
+   op _-_ : EBType EBType -> EBType .
+   eq val(elt(n)) - val(elt(n')) = 
+        if n >= n' then val(elt(sd( n , n'))) 
+        else val(elt(0))
+            fi
+            .
+   op _*_ : EBType EBType -> EBType .
+   eq val(elt(n)) * val(elt(n')) = val(elt(n * n')) .
+   op _/_ : EBType EBType -> EBType .
+   eq val(elt(n)) / val(elt(n')) = val(elt( n quo  n')) .
+   op _rem_ : EBType EBType -> EBType .
+   eq val(elt(n)) rem val(elt(n')) = val(elt( n rem  n')) .
+
+   --- Relational 
+   op _<_ : EBType EBType -> EBType .
+   eq val(elt(n)) < val(elt(n')) = val(elt(n < n')) .
+   op _>_ : EBType EBType -> EBType .
+   eq val(elt(n)) > val(elt(n')) = val(elt(n > n')) .
+   op _<=_ : EBType EBType -> EBType .
+   eq val(elt(n)) <= val(elt(n')) = val(elt(n <= n')) .
+   op _>=_ : EBType EBType -> EBType .
+   eq val(elt(n)) >= val(elt(n')) = val(elt(n >= n')) .
+
+   --- Equality and inequality 
+   op _=b_ : EBType EBType -> EBType .
+   eq val(elt(n)) =b val(elt(n')) = val(elt(n == n')) .
+   eq val(elt(b)) =b val(elt(b')) = val(elt(b == b')) .
+   eq val(elt(s)) =b val(elt(s')) = val(elt(s == s')) .
+   op _<>b_ : EBType EBType -> EBType .
+   eq val(elt(n)) <>b val(elt(n')) = val(elt(n =/= n')) .
+   eq val(elt(b)) <>b val(elt(b')) = val(elt(b =/= b')) .
+   eq val(elt(s)) <>b val(elt(s')) = val(elt(s =/= s')) .
+
+   --- Boolean 
+   op _andb_ : EBType EBType -> EBType .
+   eq val(elt(b)) andb val(elt(b')) = val(elt(b and b')) .
+   op _orb_ : EBType EBType -> EBType .
+   eq val(elt(b)) orb val(elt(b')) = val(elt(b or b')) .
+   op ~_ : EBType -> EBType .
+   eq ~ val(elt(b)) = val(elt(not b)) .
+
+   --- Relations
+   op make-rel : EBType EBType -> EBType .
+   --- Operands must be sets of values
+   eq make-rel(val(S), val(S')) = val(make-rel(S, S')) .
+   op dom : EBType -> EBType .
+   eq dom(val(R)) = val(dom(R)) .
+
+   op overr : EBType EBType -> EBType .
+   eq overr(val(R) , val(R')) = val(overr(R, R')) .
+
+   op dom-res : EBType EBType -> EBType .
+   eq dom-res(val(R), val(S)) = val(dom-res(R, S)) .
+   op ran-res : EBType EBType -> EBType .
+   eq ran-res(val(R), val(S)) = val(ran-res(R, S)) .
+
+   --- Sets
+   op is-empty : EBType -> Bool .
+   eq is-empty(val((empty).EBRel)) = true .
+   eq is-empty(val((empty).EBSet)) = true .
+   eq is-empty(X:EBType) = false [owise] .
+
+   op card : EBType -> EBType .
+   eq card(val(R)) = val(elt(card(R))) .
+   eq card(val(S)) = val(elt(card(S))) .
+
+   op union : EBType EBType -> EBType .
+   eq union(val(S), val(S')) = val(union(S, S')) .
+
+   op intersection : EBType EBType -> EBType .
+   eq intersection(val(S), val(S')) = val(intersection(S, S')) .
+
+   op _in_ : EBType EBType -> EBType .
+   eq val(e) in  val(S)= val(elt(e in S)) .
+   op _nin_ : EBType EBType -> EBType .
+   eq val(e) nin val(S) = val(elt(not (e in S))) .
+
+
+endfm
+
+ view EBType from TRIV to EB-TYPE is
+   sort Elt to EBType .
+ endv
+
+--- Constructors for choices in machines
+--- including list of values of the form v1! v2! ... 
+--- and list of values qualified by probabilities ( E @ p)
+mod EB-CHOICE is
+    pr EB-TYPE .
+    pr SAMPLER .
+    sort EBChoice .
+    sort EBPChoice .
+    sort EBVChoice .
+
+
+    op empchoice : -> EBPChoice .
+    op empchoice : -> EBVChoice .
+    op _@_ : EBType Float -> EBPChoice [ctor prec 10].
+    op _! :  EBType  ->      EBVChoice [ctor prec 10].
+
+    --- List of values and quantified values
+    op __ : EBVChoice EBVChoice -> EBVChoice [ctor assoc id: empchoice] .
+    op __ : EBPChoice EBPChoice -> EBPChoice [ctor assoc id: empchoice] .
+
+    op is-empty : EBVChoice -> Bool .
+    eq is-empty(empchoice) = true .
+    eq is-empty(LEBV) = false [owise] .
+
+    ----------------------------
+    var LEBP     : EBPChoice .
+    var LEBV     : EBVChoice .
+    vars F F'    : Float .
+    var N        : Nat .
+    vars n n'    : Nat .
+    var myCounter : Nat .
+    var EBT      : EBType .
+    vars e e'    : EBElt .
+    var t        : EBPair .
+    var S        : EBSet .
+    var R        : EBRel .
+    var SL       : EBList .
+    var RL       : EBRelL .
+    ----------------------------
+
+    --- Accumulate values e @ p1 e' @ p2 --> e @ p1 e @ (p1 + p2) ...
+    op accumulate : EBPChoice -> EBPChoice .
+    op $accumulate : EBPChoice Float -> EBPChoice .
+
+    eq accumulate(LEBP) = $accumulate(LEBP, 0.0) .
+    eq $accumulate(empchoice, F') = empchoice .
+    eq $accumulate(EBT @ F LEBP , F') = EBT @ (F + F') $accumulate(LEBP, F + F') .
+
+    --- Not defined for empty choices (not allowed neither in the syntax)
+    op choice : EBPChoice Nat  ~>  EBType .
+    op choice : EBPChoice Float ~>  EBType .
+    op $choice : EBPChoice Float ~>  EBType .
+    eq choice(LEBP, myCounter) = choice(LEBP, rand(myCounter)) .
+    eq choice(LEBP, F') = $choice(accumulate(LEBP), F') .
+
+    eq $choice(EBT @ F LEBP , F') 
+     = if F' < F or LEBP == empchoice 
+        then EBT 
+        else $choice(LEBP, F') 
+       fi .
+
+
+    --- Size of a list of choices
+    op size : EBVChoice -> Nat .
+    op $size : EBVChoice Nat -> Nat .
+    eq size(LEBV) = $size(LEBV, 0) .
+    eq $size(empchoice, N) = N .
+    eq $size ((EBT !) LEBV, N) = $size(LEBV ,  s(N)) .
+
+    --- Choosing a values from a list of values (the n-th value)
+    --- Not defined for empty list (not allowed neither in the syntax)
+    op choice : EBVChoice Nat ~> EBType .
+    op $choice : EBVChoice Nat ~> EBType .
+    eq choice(LEBV, myCounter) = $choice(LEBV, random(myCounter) rem size(LEBV) ) .
+    eq $choice( (EBT !) LEBV, 0 ) = EBT .
+    eq $choice( (EBT !) LEBV, s(N)) = $choice(LEBV, N) .
+
+    --- Choosing a value from an integer interval 
+    op choice : EBType EBType Nat ~> EBType .
+    eq choice(val(elt(n)), val(elt(n')), myCounter) = val(elt(n + uniform(1 + sd(n', n), myCounter))) .
+
+    --- From EBSets and EBRel to list of choices
+    op toEBVChoice : EBList  -> EBVChoice .
+    eq toEBVChoice( (nil).EBList ) = empchoice .
+    eq toEBVChoice( e SL ) = val(e) !  toEBVChoice(SL) .
+    op toEBVChoice : EBRelL  -> EBVChoice .
+    eq toEBVChoice( (nil).EBRelL ) = empchoice .
+    eq toEBVChoice( t RL ) = val(t) !  toEBVChoice(RL) .
+
+
+    --- Choosing a value from a non-empty EBSet or EBRel
+    op choice : EBType Nat ~> EBType .
+    eq choice(val(S),myCounter) = choice(toEBVChoice(makeList(S)),myCounter) .
+    eq choice(val(R),myCounter) = choice(toEBVChoice(makeList(R)),myCounter) .
+
+    --- These operators  lift |-> to  val(x) |-> t and val(x) |-> val(y)
+    op _|->_ : EBType EBElt -> EBPair .
+    eq val(e) |-> e' =  e |-> e' .
+    op _|->_ : EBType EBType -> EBPair .
+    eq val(e) |-> val(e') =  e |-> e' .
+endm
+
+--- Module to be included to implement contexts/machines
+mod EB-CORE is
+
+  pr EB-CHOICE .
+
+endm
+eof

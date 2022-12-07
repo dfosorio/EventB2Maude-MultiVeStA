@@ -1,0 +1,112 @@
+mod APMAUDE is
+  pr BOOL .
+  pr FLOAT .
+  pr NAT .
+  pr CONFIGURATION .
+  pr STRING .
+
+  op flg : Bool Float -> Configuration . --- a flag delimiting execution rounds (?)
+
+  sort Content .
+  ops timeoutAPExpired timeoutASExpired : -> Content .
+  op generateNextEffect : -> Content [ ctor ] .
+  op execute : Oid Msg -> Content [ ctor ] .
+  
+  --- Messages
+  op emptyContent : -> Content [ ctor ] .
+  op _<-_ : Oid Content -> Msg .
+
+  --- Scheduler
+  sorts Scheduler ScheduleElem ScheduleList .
+  subsort ScheduleElem < ScheduleList .
+  subsort Scheduler < Configuration .
+  
+  var t1 t2 t gt : Float .
+  vars C C2 conf : Configuration .
+  var O O1 : Object .
+  var p i m n : Nat .
+  var SL SL' : ScheduleList .
+  var e : ScheduleElem .
+  var M1 M2 : Msg .
+
+  op  nilSL : -> ScheduleList [ ctor ] .
+  --- op  _;_ : ScheduleList ScheduleList -> ScheduleList [assoc comm id: nilSL] .
+  op  _;_ : ScheduleList ScheduleList -> ScheduleList [assoc id: nilSL] .
+
+  op [_,_,_] : Float Msg Nat -> ScheduleElem [ ctor ] .  --- [t, m, p]: t -> time, m -> message, p -> drop?
+  op [_,_] : Float Msg -> ScheduleElem .
+  
+  op {_|_} : Float ScheduleList -> Scheduler .
+  op insert : Scheduler ScheduleElem -> Scheduler .
+  op insert : ScheduleList ScheduleElem -> ScheduleList .
+  op insertList : Scheduler ScheduleList -> Scheduler .
+  op insertList : ScheduleList ScheduleList -> ScheduleList .
+  
+  op tick : Configuration -> Configuration .
+  eq tick( sc conf ) = mytick(sc) conf .
+  eq tick( {sc conf} ) = {mytick(sc) conf} .
+  
+  op mytick : Scheduler -> Configuration .
+  eq mytick({ gt | [ t1 , M1 , p] ; SL }) = M1 { t1 | SL } .
+  eq mytick({ gt | nilSL }) = { gt | nilSL } .
+  
+  op global-time : Scheduler -> Float .
+  op getTime : Configuration -> Float .
+  
+  eq [ t1 , M1 ] = [ t1 , M1 , 0] .
+  eq global-time({ gt | SL }) = gt .
+  eq getTime(C {gt | SL}) = gt .  
+
+  eq insert({ gt | SL },e) = { gt | insert(SL,e) } .
+  eq insert(SL , [ t2 , M2 , 1]) = SL .   
+  eq insert([ t1 , M1 , p] ; SL , [ t2 , M2 , 0]) = 
+       if t1 < t2 
+        then [ t1 , M1 , p] ; insert(SL, [ t2 , M2 , 0]) 
+        else ([ t2 , M2 , 0] ; [ t1 , M1 , p] ; SL) 
+       fi .
+  eq insert( nilSL , [ t2 , M2 , 0]) = [ t2 , M2 , 0] .
+
+  eq insertList({ gt | SL }, SL') = { gt | insertList(SL, SL') } .
+  eq insertList(SL , [t2 , M2, p] ; SL') = insertList( insert(SL, [t2, M2, p]), SL' ) .
+  eq insertList( SL , nilSL ) = SL .
+
+  
+  op { _ } : Configuration -> Configuration [ ctor ] .
+  op init : -> Configuration .
+  
+  var sc : Scheduler .
+  op initState : -> Configuration .
+  eq initState = closeWorldExceptScheduler(init) [ owise ] .
+  op closeWorldExceptScheduler : Configuration -> Configuration .
+  eq closeWorldExceptScheduler(sc C) = sc { C } .
+  
+  
+  --- counter for random number generation
+  op randomCounter : Nat -> Object [ ctor ] .
+  op stepsCounter : Nat -> Object [ ctor ] .
+  op randomAndStepsCounter : Nat Nat -> Object [ ctor ] .
+  
+  
+  op sat : Nat Configuration -> Bool .
+  op val : Nat Configuration -> Float .
+  op val : String Configuration -> Float .
+  
+  
+  var when : Float . var event : Msg .
+  op eventToBeScheduled : Float Msg -> Object .
+  eq scheduledEvents(SL) eventToBeScheduled(when,event) = scheduledEvents(insert(SL,[ when, event,0 ])) .
+  op globalTime : Float -> Object .
+  op scheduledEvents : ScheduleList -> Object .
+  eq tick( globalTime(gt) scheduledEvents(SL) conf ) = mytick(globalTime(gt) scheduledEvents(SL)) conf .
+  op mytick : Configuration -> Configuration .
+  eq mytick(globalTime(gt) scheduledEvents([ t1 , M1 , p] ; SL )) = M1 globalTime(t1) scheduledEvents(SL) .
+  eq mytick(globalTime(gt) scheduledEvents(nilSL)) = globalTime(gt) scheduledEvents(nilSL) .
+  
+endm  
+
+
+  
+--- Hide part of the terms 
+*** set print conceal on .
+*** print conceal mod_is_sorts_._____endm .
+*** print conceal rules .  
