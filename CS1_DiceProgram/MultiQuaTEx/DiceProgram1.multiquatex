@@ -1,0 +1,10 @@
+PDice1(n) = if ((s.rval("isMax") == 1.0) || (s.rval("deadlock") == 1.0)) 
+	     then s.rval(n) else # PDice1(n) fi ;
+
+eval E[ PDice1("obs1") ] ;
+eval E[ PDice1("obs2") ] ;
+eval E[ PDice1("obs3") ] ;
+eval E[ PDice1("obs4") ] ;
+eval E[ PDice1("obs5") ] ;
+eval E[ PDice1("obs6") ] ;
+

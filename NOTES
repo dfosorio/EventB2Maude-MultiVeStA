@@ -1,0 +1,7 @@
+IMPORTANTE
+========================================================================
+1) en el ejemplo de los dados fue necesario subir el batch a 100, ya que si en los primeros 28 lanzamientos no salia
+   por el ejemplo el 12, el CI va a ser 0.0 por lo cual no va a contarlos despues. Algo IMPORTANTE para documentar en 
+   la tesis.
+2) Poner lo que esta en el punto 1 a la hora de colocar la explicacion de MultiVeStA y por que es importante controlar la cantidad de batches
+========================================================================
