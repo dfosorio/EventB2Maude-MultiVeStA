@@ -106,6 +106,7 @@ class BMaude(EventBListener):
             if ctx.INTERSECTION(): return binsymbol("intersection", infix=False)
             if ctx.IN(): return binsymbol(" in ")
             if ctx.NOTIN(): return binsymbol(" nin ")
+            if ctx.SUBSTRACTION(): return binsymbol(" \\ ")
 
         # Boolean 
         if type(ctx) == EventBParser.BoolExprContext:

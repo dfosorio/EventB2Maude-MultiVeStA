@@ -443,8 +443,15 @@ fmod EB-TYPE is
 
    op dom-res : EBType EBType -> EBType .
    eq dom-res(val(R), val(S)) = val(dom-res(R, S)) .
+
    op ran-res : EBType EBType -> EBType .
    eq ran-res(val(R), val(S)) = val(ran-res(R, S)) .
+
+   --- union for relations
+   eq union(val(R), val(R')) = val(union(R, R')) .
+
+   --- substraction for relations
+   eq val(R) \ val(R') = val(R \ R') .
 
    --- Sets
    op is-empty : EBType -> Bool .
@@ -466,6 +473,10 @@ fmod EB-TYPE is
    eq val(e) in  val(S)= val(elt(e in S)) .
    op _nin_ : EBType EBType -> EBType .
    eq val(e) nin val(S) = val(elt(not (e in S))) .
+
+   --- substraction for sets
+   op _\_ : EBType EBType -> EBType .
+   eq val(S) \ val(S') = val(S \ S') .
 
 
 endfm
