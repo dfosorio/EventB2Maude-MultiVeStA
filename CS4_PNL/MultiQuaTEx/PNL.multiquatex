@@ -1,5 +1,5 @@
 PPNL(n) = if ((s.rval("isMax") == 1.0) || (s.rval("deadlock") == 1.0)) 
 	     then s.rval(n) else # PPNL(n) fi ;
 
-eval E[ PPNL("deadlock") ] ;
+eval E[ PPNL("balanced") ] ;
 
