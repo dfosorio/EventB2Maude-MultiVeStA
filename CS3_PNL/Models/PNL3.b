@@ -23,9 +23,8 @@ MACHINE PNL
                     b |-> c, b |-> d, b |-> e,
                     c |-> d, c |-> e,
                     d |-> e }
-    Rpositive := { a |-> c , b |-> d } # intial configuration of the graph's positive edges #
-    Rnegative := emptyrel              # intial configuration of the graph's negative edges #
-
+    Rpositive := { a |-> b , a |-> e, b |-> c, b |-> d, c |-> d } # intial configuration of the graph's positive edges #
+    Rnegative := { a |-> c, a |-> d } # intial configuration of the graph's negative edges #
   
   EVENT addPositiveEdge 
   WEIGHT 1
@@ -49,3 +48,4 @@ MACHINE PNL
 
 
 END
+
