@@ -4,7 +4,7 @@ The EventB2Maude tool, originally presented in the following [github repository]
 
 ## Table of Contents
 - [Project Structure](#projectstructure)
-- [Installation](#installation)
+- [Prerequisites & Setup](#installation)
 - [Usage](#usage)
 - [Credits](#credits)
 - [License](#license)
@@ -17,9 +17,9 @@ The project is divided in the following folders:
 
 - As its name suggests it, the [MultiVeStA](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA) folder contains the MultiVeStA tool. The original download link of this program can be found [here](https://github.com/andrea-vandin/MultiVeStA/wiki/Integration-with-PMaude-specification). The structure of the MultiVeStA folder tool is the following:
   - The [Maude-3.0+yices2-linux](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA/Maude-3.0%2Byices2-linux) contains the Maude program (Maude executable and related other related files)
-  - The [m-theory](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA/m-theory) folder contains the necessary Maude theory for the encoded probabilistic Event-B models 
-
-
+  - The [m-theory](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA/m-theory) folder contains the necessary Maude theory for the encoded probabilistic Event-B models. For more information, refer to the third chapter of the [bachelors thesis document](https://github.com/dfosorio/Thesis/blob/main/Document/main.pdf).
+  - The [apmaude.maude](https://github.com/dfosorio/EventB2Maude-MultiVeStA/blob/main/MultiVeStA/apmaude.maude) file, which contains the necessary maude theory to exceute the MultiVeStA simulations. For more information, refer to the fourth chapter of the [bachelors thesis document](https://github.com/dfosorio/Thesis/blob/main/Document/main.pdf).
+  - The [multivesta.jar](https://github.com/dfosorio/EventB2Maude-MultiVeStA/blob/main/MultiVeStA/multivesta.jar) executable, used to run the simulations.
 
 - The [CS1_DiceProgram](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/CS1_DiceProgram), [CS2_BRetrans5](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/CS2_BRetrans5) and [CS3_PNL](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/CS3_PNL) are some case study folders for the tool, with the following structure:
   - A **Models** folder that contains the probabilistic Event-b models (files with .b extension) and the resulting probabilistic Maude models (files with .maude extension) after translating them with the parser.
@@ -27,14 +27,19 @@ The project is divided in the following folders:
   - A **Results** folder with the results returned by MultiVeStA after running the simulations with the models and MultiQuatTEx formulas.
   - A **runMultivestaLinux64.sh** file used to execute the simulations using MultiVeStA, that specify the simulation parameters. 
     
-## Installation
-
-What are the steps required to install your project? Provide a step-by-step description of how to get the development environment running.
+## Prerequisites & Setup
+The project was developed and tested using Ubuntu 22.04 LTS, but it should also work with other Linux distros. To use the tool, simply download or clone the project. No installation is requiered.
 
 ## Usage
+The general workflow when using tool is the following:
 
-how to use the tool
+#### 1. Definition of the Evnt-B probabilistic model
+Create the probabilistic Event-B model in a file with .b extesion, using the grammar defined in [EventB.g4](https://github.com/dfosorio/EventB2Maude-MultiVeStA/blob/main/parser/EventB.g4) file. You can use as an example case study models specified in the **Models** folders.
 
-    ```md
-    ![alt text](assets/images/screenshot.png)
-    ```
+#### 2. Translation from probabilistic Event-B to probabilistic Maude.
+To translate a probabilistic Event-B model, for example **"model.b"**, use the [B2Maude.py](https://github.com/dfosorio/EventB2Maude-MultiVeStA/blob/main/parser/B2Maude.py) file using the following command:
+
+```console
+python3 path/to/file/B2Maude.py --input path/to/file/model.b --output model.maude 
+```
+the **--input** argument recieves the path to the model that is going to be translated, and **--output** recieves the name of the resulting maude specification file, in this case **"model.maude**.    
