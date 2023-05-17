@@ -1,6 +1,6 @@
 # EventB2Maude-MultiVeStA
 
-The EventB2Maude tool, originally presented in the following [github repository](https://github.com/carlosolarte/EventB2Maude), allows to translate probabilistic Event-B models to probabilistic rewrite theories in Maude, that are verifiable in PVeStA, based on the theory presented [here](https://arxiv.org/abs/2206.05813). This repository contains a modified version of the previously mentioned tool, that allows the verification of the translated models with the [MultiVeStA](https://github.com/andrea-vandin/MultiVeStA) tool. Furthermore, a [bachelors thesis document](https://github.com/dfosorio/Thesis/blob/main/Document/main.pdf) can be consulted for more detailed information on the theoretical ad technical aspects behind the tool.
+The EventB2Maude tool, originally presented in the following [github repository](https://github.com/carlosolarte/EventB2Maude), allows to translate probabilistic Event-B models to probabilistic rewrite theories in Maude, that are verifiable in PVeStA, based on the theory presented [here](https://arxiv.org/abs/2206.05813). This repository contains a modified version of the previously mentioned tool, that allows the verification of the translated models with the [MultiVeStA](https://github.com/andrea-vandin/MultiVeStA) tool. Furthermore, a [bachelors thesis document](https://github.com/dfosorio/Thesis/blob/main/Document/main.pdf) can be consulted for more detailed information on the theoretical and technical aspects behind the tool.
 
 ## Table of Contents
 - [Project Structure](#structure)
