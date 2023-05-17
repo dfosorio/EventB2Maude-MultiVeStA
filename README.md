@@ -6,8 +6,6 @@ The EventB2Maude tool, originally presented in the following [github repository]
 - [Project Structure](#projectstructure)
 - [Prerequisites & Setup](#installation)
 - [Usage](#usage)
-- [Credits](#credits)
-- [License](#license)
 
 ## Project Structure
 The project is divided in the following folders:
@@ -42,4 +40,28 @@ To translate a probabilistic Event-B model, for example **"model.b"**, use the [
 ```console
 python3 path/to/file/B2Maude.py --input path/to/file/model.b --output model.maude 
 ```
-the **--input** argument recieves the path to the model that is going to be translated, and **--output** recieves the name of the resulting maude specification file, in this case **"model.maude**.    
+the **--input** argument recieves the path to the model that is going to be translated, and **--output** recieves the name of the resulting maude specification file, in this case **"model.maude**.
+
+#### 3. Definition of the MultiQuatTEx formula
+Create the MultiQuatTEx formula that is going to be evaluated using MultiVeStA and the previously defined model. The file extension of this file should be .multiquatex, for example, **formula.multiquatex**.
+
+#### 4. Definition of sh file to run simulations 
+To define the file that will be used to run the simuations, create a shell file with the following command:
+
+```sh
+java -jar multivesta.jar client -sd vesta.pmaude.NewAPMaudeState -m model.maude -o '-mc ./Maude-3.0+yices2-linux/maude-Yices2.linux64' -f formula.multiquatex -l 1 -osws ONESTEP -bs 100 -vp true -verboseServers false -a 0.01 -d1 delta -ir 0.2 
+```
+where:
+  - The -m parameter recieves the file name of the model file, in this case **model.maude**.
+  - The -f parameter recieves the file name of the formula file, in this case **formula.maude**
+  - The -bs parameter recieves a number that represents the batch size for the simulations. In this case the number is **100**.
+  - The -a parameter recieves a number that represents the alpha parameter for the simulations. In this case the number is **0.01**.
+  - The -d parameter recieves a number that represents the delta parameter for the simulations. In this case the number is **0.02**.
+
+#### 5. Running the simulations
+To run the simulations using MultiVeStA, it is necessary to include inside the [MultiVeStA](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA) folder the model file defined in step 2, the multiquatex formula file defined in step 3, and the shell file defined in step 4. After that, simply exceute the shell file inside the [MultiVeStA](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA) folder:
+
+```console
+path/to/MultiVeStA/folder/runMultivestaLinux64.sh 
+```
+in this case, the name of the shell file is **runMultivestaLinux64.sh**. After that, the results of the simulation will be saved in a newly created folder named **MultiVeStA_OUTPUT** inside the [MultiVeStA](https://github.com/dfosorio/EventB2Maude-MultiVeStA/tree/main/MultiVeStA) folder.
