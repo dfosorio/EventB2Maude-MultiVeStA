@@ -29,7 +29,7 @@ The project is divided into the following folders:
 
 <a name="setup"></a>
 ## Prerequisites & Setup
-The project was developed and tested using Ubuntu 22.04 LTS, but it should also work with other Linux distros. It is requiered to install Python and Java, to run the parser and the MultiVeStA simulations. To use the tool, simply download or clone the project. No installation is requiered.
+The project was developed and tested using Ubuntu 22.04 LTS, but it should also work with other Linux distros. It is requiered to install Python and Java, to run the parser and the MultiVeStA simulations (particularly, the Python version used in the project was 3.10.6 and the Java JDK version was 11.0.18). To use the tool, simply download or clone the project. No installation is requiered.
 
 ## Usage
 The general workflow when using the tool is the following:
